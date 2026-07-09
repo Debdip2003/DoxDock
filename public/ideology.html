@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src 'self'; script-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'self'; form-action 'none'"
+    />
+    <title>Why DoxDock exists — a letter</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <style>
+      :root {
+        --bg: #0b1018;
+        --panel: rgba(255, 255, 255, 0.03);
+        --line: rgba(255, 255, 255, 0.1);
+        --text: #e6ecf5;
+        --muted: #8ea0b6;
+        --mint: #6ee7a8;
+        --sky: #5ea9ff;
+        --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+        --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--serif);
+        line-height: 1.75;
+        -webkit-font-smoothing: antialiased;
+        position: relative;
+        min-height: 100vh;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background:
+          radial-gradient(55% 45% at 12% -8%, rgba(110, 231, 168, 0.16), transparent 60%),
+          radial-gradient(55% 45% at 98% 0%, rgba(94, 169, 255, 0.14), transparent 58%);
+      }
+      .wrap {
+        position: relative;
+        z-index: 1;
+        max-width: 40rem;
+        margin: 0 auto;
+        padding: 40px 28px 96px;
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0 44px;
+        font-family: var(--sans);
+      }
+      .mark {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: #0d141f;
+        border: 1px solid rgba(110, 231, 168, 0.35);
+        display: grid;
+        place-items: center;
+      }
+      .brand { font-weight: 600; letter-spacing: -0.01em; font-size: 18px; }
+      .brand b { color: var(--mint); font-weight: 600; }
+      .back {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        text-decoration: none;
+        border: 1px solid var(--line);
+        padding: 7px 12px;
+        border-radius: 8px;
+      }
+      .back:hover { color: var(--mint); border-color: rgba(110, 231, 168, 0.4); }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--mint);
+        margin: 0 0 16px;
+      }
+      h1 {
+        font-family: var(--sans);
+        font-weight: 640;
+        letter-spacing: -0.02em;
+        font-size: clamp(28px, 5.5vw, 42px);
+        line-height: 1.1;
+        margin: 0 0 28px;
+        text-wrap: balance;
+      }
+      p { margin: 0 0 22px; font-size: 19px; }
+      .lead { font-size: 21px; color: #f2f6fc; }
+      strong { color: #fff; font-weight: 600; }
+      em.mint { color: var(--mint); font-style: normal; }
+      .callout {
+        font-family: var(--sans);
+        font-size: 15px;
+        line-height: 1.65;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--mint);
+        border-radius: 0 12px 12px 0;
+        padding: 18px 20px;
+        margin: 34px 0;
+        color: var(--muted);
+      }
+      .callout h2 {
+        margin: 0 0 10px;
+        font-size: 13px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--sky);
+        font-weight: 600;
+      }
+      .callout ol { margin: 0; padding-left: 20px; }
+      .callout li { margin: 6px 0; }
+      .callout code {
+        font-family: var(--mono);
+        font-size: 13px;
+        background: rgba(94, 169, 255, 0.12);
+        color: #bcd8ff;
+        padding: 1px 6px;
+        border-radius: 5px;
+      }
+      .sign { margin-top: 40px; }
+      .sign .name {
+        font-size: 30px;
+        font-style: italic;
+        color: #fff;
+        margin: 0;
+      }
+      .sign .role {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+        margin: 6px 0 0;
+      }
+      hr {
+        border: none;
+        border-top: 1px solid var(--line);
+        margin: 44px 0;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--sans);
+        font-size: 15px;
+        font-weight: 500;
+        text-decoration: none;
+        color: #04231a;
+        background: var(--mint);
+        padding: 11px 18px;
+        border-radius: 10px;
+      }
+      a.inline { color: var(--sky); text-decoration: none; border-bottom: 1px solid rgba(94, 169, 255, 0.4); }
+      a.inline:hover { color: #9cc7ff; }
+      @media (prefers-reduced-motion: no-preference) {
+        .wrap > * { animation: rise 0.6s ease backwards; }
+        .wrap > *:nth-child(2) { animation-delay: 0.05s; }
+        .wrap > *:nth-child(3) { animation-delay: 0.1s; }
+        @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <span class="mark">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M12 3 20 7 12 11 4 7 12 3Z" stroke="#6ee7a8" />
+            <path d="M4 12 12 16 20 12" stroke="#5ea9ff" />
+            <path d="M4 16.5 12 20.5 20 16.5" stroke="#6ee7a8" />
+          </svg>
+        </span>
+        <span class="brand">Dox<b>Dock</b></span>
+        <a class="back" href="./">← back to the app</a>
+      </div>
+
+      <p class="eyebrow">Our ideology</p>
+      <h1>A letter to anyone who has ever paused before uploading a file.</h1>
+
+      <p class="lead">
+        You know the moment. You have a PDF that matters — a signed contract, a payslip, a
+        medical scan, a scan of your passport — and you just need to <em class="mint">do one small
+        thing</em> to it. Merge it. Shrink it. Pull the text out. So you search, you land on some
+        free online converter, you pick your file… and you hesitate.
+      </p>
+
+      <p>
+        Where is this actually going? Whose server is it landing on? How long do they keep it? Who
+        else can read it? You don't know. Nobody tells you. That hesitation — that small, sane
+        flicker of doubt — is the entire reason DoxDock exists.
+      </p>
+
+      <p>
+        So I built the opposite of that. <strong>In DoxDock, nothing you open ever leaves your
+        machine.</strong> There is no upload. There is no server waiting for your document. There
+        are no accounts, no sign-ups, no trackers, no analytics quietly noting what you do. Every
+        conversion happens inside your own browser, on your own device, using your own processor.
+        Your file is opened, worked on, and handed back — and it never once touches the network.
+      </p>
+
+      <p>
+        I didn't want you to have to <em class="mint">trust</em> me on that. Trust is what every
+        other tool asks for, and trust is exactly what you can't verify. So DoxDock is built to be
+        <strong>provable</strong> instead.
+      </p>
+
+      <div class="callout">
+        <h2>Don't trust me — check</h2>
+        <ol>
+          <li>Open your browser's <strong>Network</strong> tab and use any tool. You'll see requests only to the app itself — never an outside server.</li>
+          <li>Or turn off your Wi-Fi entirely and reload. Everything still works, offline, forever.</li>
+          <li>Or read the code. It's open source under the MIT license. The rule that forbids any network request — <code>connect-src 'self'</code> — is right there in the page's security policy.</li>
+        </ol>
+      </div>
+
+      <p>
+        The whole thing is free and open source, and that's deliberate too. Privacy shouldn't be a
+        premium tier. A tool that touches your most private documents should be one you — or anyone
+        cleverer than me — can open up, inspect, audit, fork, and host yourself. If you don't
+        believe the promise, you should be able to <em class="mint">prove it false</em>. I'm
+        betting you can't.
+      </p>
+
+      <p>
+        That's the whole ideology, really. Useful tools shouldn't come at the cost of your privacy.
+        The safest place for your files is the device already in your hands. And software that makes
+        a promise about your data should let you verify it, not just believe it.
+      </p>
+
+      <p>
+        Use it. Try to break it. Tell me where it falls short, or send a pull request and make it
+        better. It's yours as much as mine now.
+      </p>
+
+      <div class="sign">
+        <p class="name">Mithun</p>
+        <p class="role">CREATOR OF DOXDOCK</p>
+      </div>
+
+      <hr />
+
+      <a class="cta" href="./">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#04231a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+        Start using DoxDock
+      </a>
+      &nbsp;&nbsp;
+      <a class="inline" href="https://github.com/mithun-srinivas/DoxDock">View the source on GitHub</a>
+    </div>
+  </body>
+</html>

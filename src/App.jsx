@@ -96,10 +96,21 @@ export default function App() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           <a
-            href="https://github.com/"
-            onClick={(e) => e.preventDefault()}
+            href="ideology.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-ghost gap-1.5 px-2.5"
+            title="Why DoxDock exists — a letter to our users"
+          >
+            <Icon name="shieldCheck" className="h-4 w-4 text-brand-500" />
+            <span className="hidden sm:inline">Ideology</span>
+          </a>
+          <a
+            href="https://github.com/mithun-srinivas/DoxDock"
+            target="_blank"
+            rel="noopener noreferrer"
             className="btn-ghost hidden px-2 sm:inline-flex"
-            title="Open source (MIT) — see README to self-host"
+            title="Open source (MIT) — view or self-host"
             aria-label="GitHub"
           >
             <Icon name="github" className="h-5 w-5" />
