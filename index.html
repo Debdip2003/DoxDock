@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+      Strict Content-Security-Policy — this is the technical backbone of DoxDock's
+      "provably local" guarantee. connect-src 'self' means the app is forbidden
+      from making any outbound network request (fetch/XHR/WebSocket) to any host
+      other than its own origin. No CDNs, no analytics, no external fonts.
+        - script-src 'wasm-unsafe-eval': allows WebAssembly (image compression) but not eval().
+        - img-src data: blob:: canvas-generated previews and object URLs.
+        - worker-src blob:: web workers (pdf.js, image compression) load from blobs.
+      If you add a dependency that needs an external host, this CSP will break it
+      on purpose — that is the point.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+    />
+
+    <meta name="theme-color" content="#4f46e5" />
+    <meta
+      name="description"
+      content="Offline-first document & image utilities that run entirely in your browser. Nothing you upload ever leaves your machine."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180.png" />
+    <title>DoxDock — Local Document & Image Tools</title>
+  </head>
+  <body class="h-full">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
