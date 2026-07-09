@@ -82,6 +82,20 @@ const P = {
   code: '<path d="m16 18 6-6-6-6"/><path d="M8 6l-6 6 6 6"/>',
   lock:
     '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  pencil:
+    '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  cursor:
+    '<path d="m3 3 7.5 18.5 2.5-8 8-2.5z"/>',
+  type: '<path d="M4 7V4h16v3"/><path d="M12 4v16"/><path d="M8 20h8"/>',
+  pen: '<path d="M12 19l7-7 3 3-7 7-3 0z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18z"/><path d="M2 2l7.6 7.6"/><circle cx="11" cy="11" r="2"/>',
+  highlighter:
+    '<path d="m9 11 4 4"/><path d="M5 21h4l10-10a2.8 2.8 0 0 0-4-4L5 17z"/>',
+  square: '<rect x="4" y="4" width="16" height="16" rx="2"/>',
+  circle: '<circle cx="12" cy="12" r="9"/>',
+  slash: '<path d="M5 19 19 5"/>',
+  eraser:
+    '<path d="M20 20H9l-5-5a2 2 0 0 1 0-3l8-8a2 2 0 0 1 3 0l6 6a2 2 0 0 1 0 3l-6 7"/><path d="M8 11l6 6"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/>',
 }
 
 export const iconNames = Object.keys(P)

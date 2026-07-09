@@ -71,6 +71,7 @@ Operations whose client-side result has inherent limits are labelled honestly in
 | Split PDF | Extract page ranges or explode into single pages | Encrypted PDFs unsupported |
 | Rotate PDF | Rotate all or selected pages by 90/180/270° | — |
 | Organize PDF | Reorder / delete pages via thumbnails | — |
+| Edit PDF | Overlay text, drawings, highlights, shapes, images, and white-out; flatten on export | Adds content on top; does not re-flow existing text |
 | Compress PDF | Re-encode page images + strip metadata; before/after size | **Results vary.** "Re-encode pages" rasterizes (text becomes non-selectable); text-only PDFs barely compress — use "strip metadata" for those. |
 | Watermark PDF | Text stamp, centered or tiled, with opacity/angle | — |
 | Add Page Numbers | Stamp page numbers with position/format options | — |
