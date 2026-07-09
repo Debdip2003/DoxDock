@@ -73,6 +73,32 @@ export default function App() {
 
   const Component = activeOp?.Component
 
+  // Standalone "pop-out" mode: render only the active tool, no sidebar/palette.
+  const standalone = new URLSearchParams(window.location.search).get('standalone') === '1'
+  if (standalone && activeOp) {
+    return (
+      <div className="flex h-full flex-col">
+        <header className="z-20 flex items-center gap-3 border-b border-slate-200 bg-white/80 px-4 py-2.5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white">
+            <Icon name={activeOp.icon} className="h-5 w-5" />
+          </span>
+          <span className="font-semibold tracking-tight">{activeOp.name}</span>
+          <span className="ml-1 hidden sm:block"><PrivacyBadge compact /></span>
+          <div className="ml-auto">
+            <ThemeToggle theme={theme} setTheme={setTheme} />
+          </div>
+        </header>
+        <main className="min-w-0 flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+            <Suspense fallback={<Progress message="Loading tool…" />}>
+              {Component && <Component key={activeOp.id} />}
+            </Suspense>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-full flex-col">
       {/* Top bar */}

@@ -1,6 +1,24 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { loadPdf } from '../../lib/pdfjs.js'
 
+// Font family -> pdf-lib StandardFonts, by [regular, bold, italic, boldItalic].
+export const FONT_FAMILIES = {
+  Helvetica: [StandardFonts.Helvetica, StandardFonts.HelveticaBold, StandardFonts.HelveticaOblique, StandardFonts.HelveticaBoldOblique],
+  Times: [StandardFonts.TimesRoman, StandardFonts.TimesRomanBold, StandardFonts.TimesRomanItalic, StandardFonts.TimesRomanBoldItalic],
+  Courier: [StandardFonts.Courier, StandardFonts.CourierBold, StandardFonts.CourierOblique, StandardFonts.CourierBoldOblique],
+}
+// CSS font stacks for the on-screen editor.
+export const FONT_CSS = {
+  Helvetica: 'Helvetica, Arial, sans-serif',
+  Times: '"Times New Roman", Times, serif',
+  Courier: '"Courier New", Courier, monospace',
+}
+function standardFontFor(a) {
+  const fam = FONT_FAMILIES[a.fontFamily] || FONT_FAMILIES.Helvetica
+  const idx = a.bold && a.italic ? 3 : a.bold ? 1 : a.italic ? 2 : 0
+  return fam[idx]
+}
+
 export function hexToRgb(hex) {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex || '')
   if (!m) return rgb(0, 0, 0)
@@ -43,15 +61,15 @@ export async function renderPage(pdfjsDoc, pageNumber, canvas, cssWidth) {
   }
   const task = page.render({ canvasContext: ctx, viewport })
   canvas.__task = task
-  try {
-    await task.promise
-  } catch (e) {
-    if (e?.name === 'RenderingCancelledException') return null
-    throw e
-  } finally {
-    if (canvas.__task === task) canvas.__task = null
-    page.cleanup?.()
-  }
+  // The pixel render happens in the background; we do NOT await it. The page
+  // dimensions are already known, so we return them immediately — this keeps the
+  // returned value independent of whether the render is later cancelled (which is
+  // what StrictMode's double-invoke does), so the editor always gets its size.
+  task.promise
+    .catch(() => {})
+    .finally(() => {
+      if (canvas.__task === task) canvas.__task = null
+    })
   return { widthPt, heightPt, scale }
 }
 
@@ -88,9 +106,13 @@ export async function prepareImage(file) {
 export async function exportEditedPdf(origBytes, annotations, onProgress) {
   onProgress?.(0.2, 'Opening PDF…')
   const doc = await PDFDocument.load(origBytes)
-  const font = await doc.embedFont(StandardFonts.Helvetica)
   const pages = doc.getPages()
   const imgCache = new Map()
+  const fontCache = new Map()
+  const getFont = async (name) => {
+    if (!fontCache.has(name)) fontCache.set(name, await doc.embedFont(name))
+    return fontCache.get(name)
+  }
 
   const list = [...annotations].sort((a, b) => a.page - b.page)
   for (let i = 0; i < list.length; i++) {
@@ -103,6 +125,7 @@ export async function exportEditedPdf(origBytes, annotations, onProgress) {
     if (a.type === 'text') {
       const size = a.fontSize
       const color = hexToRgb(a.color)
+      const font = await getFont(standardFontFor(a))
       const lines = String(a.text || '').split('\n')
       lines.forEach((line, li) => {
         page.drawText(line, {

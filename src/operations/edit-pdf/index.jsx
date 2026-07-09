@@ -3,10 +3,12 @@ import Dropzone from '../../components/Dropzone.jsx'
 import Progress from '../../components/Progress.jsx'
 import Note from '../../components/Note.jsx'
 import Icon from '../../components/Icon.jsx'
-import DownloadButton from '../../components/DownloadButton.jsx'
 import { useJob } from '../../hooks/useJob.js'
 import { baseName } from '../../lib/format.js'
-import { openForRender, renderPage, prepareImage, exportEditedPdf } from './helpers.js'
+import { downloadBlob } from '../../lib/download.js'
+import { openForRender, renderPage, prepareImage, exportEditedPdf, FONT_CSS } from './helpers.js'
+
+const FONT_OPTIONS = ['Helvetica', 'Times', 'Courier']
 
 const TOOLS = [
   { id: 'select', icon: 'cursor', label: 'Select / move' },
@@ -17,7 +19,8 @@ const TOOLS = [
   { id: 'ellipse', icon: 'circle', label: 'Ellipse' },
   { id: 'line', icon: 'slash', label: 'Line' },
   { id: 'image', icon: 'image', label: 'Image' },
-  { id: 'whiteout', icon: 'eraser', label: 'White-out' },
+  { id: 'whiteout', icon: 'whiteout', label: 'White-out (cover with white)' },
+  { id: 'erase', icon: 'eraser', label: 'Erase added items' },
 ]
 const RESIZABLE = new Set(['rect', 'ellipse', 'highlight', 'whiteout', 'image'])
 let uid = 0
@@ -106,7 +109,9 @@ function AnnotationBox({ a, scale, selectTool, selected, editing, onSelect, onCh
           color: a.color,
           fontSize: a.fontSize * scale,
           lineHeight: 1.25,
-          fontFamily: 'system-ui, sans-serif',
+          fontFamily: FONT_CSS[a.fontFamily] || FONT_CSS.Helvetica,
+          fontWeight: a.bold ? 700 : 400,
+          fontStyle: a.italic ? 'italic' : 'normal',
           whiteSpace: 'pre-wrap',
           padding: 0,
         }}
@@ -168,6 +173,10 @@ export default function EditPdf() {
   const [color, setColor] = useState('#e11d48')
   const [strokeWidth, setStrokeWidth] = useState(3)
   const [fontSize, setFontSize] = useState(16)
+  const [fontFamily, setFontFamily] = useState('Helvetica')
+  const [bold, setBold] = useState(false)
+  const [italic, setItalic] = useState(false)
+  const [outName, setOutName] = useState('')
   const [selectedId, setSelectedId] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [draft, setDraft] = useState(null)
@@ -208,6 +217,7 @@ export default function EditPdf() {
   const pick = async (files) => {
     const f = files[0]
     setFile(f)
+    setOutName(`${baseName(f.name)}-edited.pdf`)
     setAnnos([])
     historyRef.current = []
     setSelectedId(null)
@@ -261,6 +271,51 @@ export default function EditPdf() {
 
   const updateAnno = (id, patch) => setAnnos((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)))
 
+  // ── erase (delete added items under the cursor) ──
+  const distToSeg = (px, py, x1, y1, x2, y2) => {
+    const dx = x2 - x1, dy = y2 - y1
+    const l2 = dx * dx + dy * dy
+    let t = l2 ? ((px - x1) * dx + (py - y1) * dy) / l2 : 0
+    t = Math.max(0, Math.min(1, t))
+    return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy))
+  }
+  const hitTest = (a, p) => {
+    if (['rect', 'ellipse', 'highlight', 'whiteout', 'image'].includes(a.type))
+      return p.x >= a.x && p.x <= a.x + a.w && p.y >= a.y && p.y <= a.y + a.h
+    if (a.type === 'text') {
+      const lines = String(a.text || '').split('\n')
+      const maxLen = Math.max(1, ...lines.map((l) => l.length))
+      const w = Math.max(20, maxLen * a.fontSize * 0.55)
+      const h = lines.length * a.fontSize * 1.3
+      return p.x >= a.x && p.x <= a.x + w && p.y >= a.y && p.y <= a.y + h
+    }
+    if (a.type === 'line') return distToSeg(p.x, p.y, a.x1, a.y1, a.x2, a.y2) <= a.width / 2 + 6
+    if (a.type === 'draw') {
+      for (let i = 1; i < a.points.length; i++) {
+        const A = a.points[i - 1], B = a.points[i]
+        if (distToSeg(p.x, p.y, A.x, A.y, B.x, B.y) <= a.width / 2 + 6) return true
+      }
+    }
+    return false
+  }
+  const eraseAt = (p) => {
+    setAnnos((prev) => {
+      let hitId = null
+      for (let i = prev.length - 1; i >= 0; i--) {
+        const a = prev[i]
+        if (a.page === pageIndex && hitTest(a, p)) { hitId = a.id; break }
+      }
+      if (!hitId) return prev
+      historyRef.current.push(prev)
+      return prev.filter((a) => a.id !== hitId)
+    })
+  }
+  const eraseMove = (e) => dims && eraseAt(localPt(e))
+  const eraseUp = () => {
+    window.removeEventListener('pointermove', eraseMove)
+    window.removeEventListener('pointerup', eraseUp)
+  }
+
   // overlay pointer (creation)
   const onOverlayDown = (e) => {
     if (!dims) return
@@ -272,11 +327,18 @@ export default function EditPdf() {
       return
     }
     const p = localPt(e)
+    if (tool === 'erase') {
+      eraseAt(p)
+      window.addEventListener('pointermove', eraseMove)
+      window.addEventListener('pointerup', eraseUp)
+      return
+    }
     if (tool === 'text') {
       const id = nextId()
-      commit((prev) => [...prev, { id, type: 'text', page: pageIndex, x: p.x, y: p.y, text: 'Text', fontSize, color }])
+      commit((prev) => [...prev, { id, type: 'text', page: pageIndex, x: p.x, y: p.y, text: 'Text', fontSize, color, fontFamily, bold, italic }])
       setSelectedId(id)
       setEditingId(id)
+      setTool('select') // so you can type immediately without spawning new boxes
       return
     }
     if (tool === 'draw') {
@@ -347,16 +409,43 @@ export default function EditPdf() {
     if (id === 'image') imgInputRef.current?.click()
   }
 
+  const finalName = () => {
+    let n = (outName || `${baseName(file.name)}-edited`).trim().replace(/[\\/:*?"<>|]/g, '_')
+    if (!/\.pdf$/i.test(n)) n += '.pdf'
+    return n
+  }
   const doExport = () =>
-    exportJob.run((p) => exportEditedPdf(bytesRef.current, annos, p).then((blob) => ({ blob, filename: `${baseName(file.name)}-edited.pdf` })))
+    exportJob.run((p) => exportEditedPdf(bytesRef.current, annos, p).then((blob) => ({ blob, filename: finalName() })))
+
+  const openStandalone = () => {
+    const url = `${window.location.origin}${window.location.pathname}?standalone=1#/edit-pdf`
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
 
   const pageAnnos = annos.filter((a) => a.page === pageIndex)
   const svgAnnos = pageAnnos.filter((a) => a.type === 'draw' || a.type === 'line')
   const boxAnnos = pageAnnos.filter((a) => a.type !== 'draw' && a.type !== 'line')
   const needsStroke = ['draw', 'rect', 'ellipse', 'line'].includes(tool)
+  const isStandalone = new URLSearchParams(window.location.search).get('standalone') === '1'
+
+  const goodToKnow = (
+    <Note type="warning" title="Good to know">
+      A visual editor that overlays your additions onto the pages and bakes them in on export. It
+      adds new content (text, ink, shapes, images, white-out) on top of the PDF — it does not
+      re-flow or edit the document’s existing text.
+    </Note>
+  )
 
   return (
     <div className="space-y-5">
+      {!isStandalone && (
+        <div className="flex justify-end">
+          <button type="button" className="btn-secondary" onClick={openStandalone} title="Open the editor in its own window">
+            <Icon name="fileOut" className="h-4 w-4" /> Open in new window
+          </button>
+        </div>
+      )}
+
       {!file && (
         <Dropzone onFiles={pick} accept="application/pdf,.pdf" multiple={false} label="Drop a PDF here or click to browse" hint="Then add text, drawings, highlights, shapes, images, or white-out" icon="pencil" />
       )}
@@ -397,10 +486,19 @@ export default function EditPdf() {
               </label>
             )}
             {tool === 'text' && (
-              <label className="flex items-center gap-1.5 text-xs text-slate-500">
-                Size
-                <input type="number" min="6" max="96" value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} className="field-input h-8 w-16 py-1" />
-              </label>
+              <>
+                <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value)} className="field-input h-8 w-28 py-1" title="Font">
+                  {FONT_OPTIONS.map((f) => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+                <label className="flex items-center gap-1.5 text-xs text-slate-500">
+                  Size
+                  <input type="number" min="6" max="96" value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} className="field-input h-8 w-16 py-1" />
+                </label>
+                <button type="button" title="Bold" onClick={() => setBold((b) => !b)} className={'flex h-8 w-8 items-center justify-center rounded-lg font-bold ' + (bold ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800')}>B</button>
+                <button type="button" title="Italic" onClick={() => setItalic((i) => !i)} className={'flex h-8 w-8 items-center justify-center rounded-lg italic ' + (italic ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800')}>I</button>
+              </>
             )}
 
             <div className="mx-1 h-6 w-px bg-slate-200 dark:bg-slate-700" />
@@ -522,16 +620,33 @@ export default function EditPdf() {
             <button type="button" className="btn-primary" onClick={doExport} disabled={exportJob.running}>
               <Icon name="download" className="h-4 w-4" /> Apply edits &amp; download
             </button>
-            {exportJob.result && <DownloadButton result={exportJob.result} label="Download edited PDF" />}
             <button type="button" className="btn-ghost" onClick={() => { setFile(null); setPdfjsDoc(null); setDims(null) }}>
               Choose another file
             </button>
           </div>
+
           {exportJob.running && exportJob.progress && <Progress value={exportJob.progress.value} message={exportJob.progress.message} />}
           {exportJob.error && <Note type="error" title="Export failed">{exportJob.error}</Note>}
+
+          {/* File name step — only shown once the edited PDF has been prepared. */}
+          {exportJob.result && !exportJob.running && (
+            <div className="card space-y-3 p-4">
+              <p className="text-sm font-medium text-brand-700 dark:text-brand-300">Your edited PDF is ready — name it and download.</p>
+              <label className="block space-y-1">
+                <span className="field-label">File name</span>
+                <input className="field-input" value={outName} onChange={(e) => setOutName(e.target.value)} placeholder="edited.pdf" />
+              </label>
+              <button type="button" className="btn-primary" onClick={() => downloadBlob(exportJob.result.blob, finalName(), 'application/pdf')}>
+                <Icon name="download" className="h-4 w-4" /> Download {finalName()}
+              </button>
+            </div>
+          )}
+
           <p className="text-xs text-slate-400">Tip: pick a tool, then click or drag on the page. Use Select to move, resize, or delete anything you’ve added.</p>
         </>
       )}
+
+      {goodToKnow}
     </div>
   )
 }

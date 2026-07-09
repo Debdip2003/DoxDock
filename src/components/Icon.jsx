@@ -96,6 +96,7 @@ const P = {
   eraser:
     '<path d="M20 20H9l-5-5a2 2 0 0 1 0-3l8-8a2 2 0 0 1 3 0l6 6a2 2 0 0 1 0 3l-6 7"/><path d="M8 11l6 6"/>',
   undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/>',
+  whiteout: '<rect x="3" y="6" width="18" height="12" rx="1"/><path d="M7 12h10"/>',
 }
 
 export const iconNames = Object.keys(P)
