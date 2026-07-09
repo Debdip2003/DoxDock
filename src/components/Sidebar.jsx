@@ -55,10 +55,15 @@ export default function Sidebar({ activeId, onSelect, onOpenPalette }) {
         {groups.length === 0 && (
           <p className="px-3 py-4 text-sm text-slate-500">No tools match “{query}”.</p>
         )}
-        {groups.map((group) => (
-          <div key={group.id} className="mb-4">
-            <p className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              <Icon name={group.icon} className="h-3.5 w-3.5" />
+        {groups.map((group, gi) => (
+          <div
+            key={group.id}
+            className={cx(
+              'mb-2',
+              gi > 0 && 'mt-4 border-t border-slate-200/80 pt-4 dark:border-slate-800',
+            )}
+          >
+            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
               {group.label}
             </p>
             <ul className="space-y-0.5">
