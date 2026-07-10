@@ -1,5 +1,9 @@
 # DoxDock
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-10b981?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
+[![Created by Mithun S](https://img.shields.io/badge/Created%20by-Mithun%20S-4f46e5?style=for-the-badge&logo=github&logoColor=white)](https://github.com/mithun-srinivas)
+[![Supported by OSCode Community](https://img.shields.io/badge/Supported%20by-OSCode%20Community-F59E0B?style=for-the-badge)](https://github.com/OSCode-Community)
+
 **Offline-first document & image tools that run 100% in your browser. Nothing you open ever leaves your machine.**
 
 DoxDock is a collection of ~20 everyday PDF and image utilities — merge, split, compress, convert, watermark, extract text, and more — built on one hard rule: **your files never get uploaded anywhere.** Every operation runs client-side, on your device, using your browser's own CPU. No servers, no accounts, no analytics, no network.
