@@ -66,8 +66,9 @@ DoxDock ships as a static site, so the container just serves the built files wit
 **With Docker:**
 
 ```bash
-# build the image
-docker build -t doxdock .
+# build the image (--load puts it in your local image store; needed when the
+# active buildx builder uses the docker-container driver)
+docker build --load -t doxdock .
 
 # run it (serves on http://localhost:8791)
 docker run --rm -p 8791:80 doxdock
