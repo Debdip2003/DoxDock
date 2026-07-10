@@ -7,37 +7,48 @@ import DownloadButton from '../../components/DownloadButton.jsx'
 import { useJob } from '../../hooks/useJob.js'
 import { formatBytes, baseName } from '../../lib/format.js'
 import { rotatePdf } from './helpers.js'
+import { usePdfPageCount } from '../../hooks/usePdfPageCount.js'
 
 export default function RotatePdf() {
   const [file, setFile] = useState(null)
   const [angle, setAngle] = useState(90)
   const [range, setRange] = useState('')
   const { running, progress, error, result, run, reset } = useJob()
+  const { pageCount } = usePdfPageCount(file)
 
   const pick = (files) => {
     setFile(files[0])
     reset()
   }
   const go = () =>
-    run((p) => rotatePdf(file, { angle: Number(angle), range }, p).then((blob) => ({ blob, filename: `${baseName(file.name)}-rotated.pdf` })))
+    run((p) =>
+      rotatePdf(file, { angle: Number(angle), range }, p).then((blob) => ({
+        blob,
+        filename: `${baseName(file.name)}-rotated.pdf`,
+      })),
+    )
 
   return (
     <div className="space-y-6">
-      <Dropzone onFiles={pick} accept="application/pdf,.pdf" multiple={false} label="Drop a PDF here or click to browse" icon="fileText" />
+      <Dropzone onFiles={pick} accept="application/pdf,.pdf" multiple={false} label="Drop a PDF here or click to browse" />
 
       {file && (
         <>
           <div className="card flex items-center gap-3 p-3">
             <Icon name="fileText" className="h-5 w-5 text-brand-600" />
             <span className="min-w-0 flex-1 truncate text-sm font-medium">{file.name}</span>
-            <span className="text-xs text-slate-400">{formatBytes(file.size)}</span>
+          <span className="text-xs text-slate-400">{formatBytes(file.size)}{pageCount != null && ` · ${pageCount} page${pageCount === 1 ? '' : 's'}`}</span>
           </div>
 
           <div className="card p-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-1">
                 <span className="field-label">Rotate by</span>
-                <select className="field-input" value={angle} onChange={(e) => setAngle(e.target.value)}>
+                <select
+                  className="field-input"
+                  value={angle}
+                  onChange={(e) => setAngle(e.target.value)}
+                >
                   <option value={90}>90° clockwise</option>
                   <option value={180}>180°</option>
                   <option value={270}>270° (90° counter-clockwise)</option>
@@ -45,7 +56,12 @@ export default function RotatePdf() {
               </label>
               <label className="space-y-1">
                 <span className="field-label">Pages (optional)</span>
-                <input className="field-input" placeholder="All pages — or e.g. 1-3,5" value={range} onChange={(e) => setRange(e.target.value)} />
+                <input
+                  className="field-input"
+                  placeholder="All pages — or e.g. 1-3,5"
+                  value={range}
+                  onChange={(e) => setRange(e.target.value)}
+                />
               </label>
             </div>
           </div>
@@ -61,7 +77,11 @@ export default function RotatePdf() {
       )}
 
       {running && progress && <Progress value={progress.value} message={progress.message} />}
-      {error && <Note type="error" title="Rotate failed">{error}</Note>}
+      {error && (
+        <Note type="error" title="Rotate failed">
+          {error}
+        </Note>
+      )}
     </div>
   )
 }

@@ -7,12 +7,14 @@ import ResultGallery from '../../components/ResultGallery.jsx'
 import { useJob } from '../../hooks/useJob.js'
 import { formatBytes, baseName } from '../../lib/format.js'
 import { splitPdf } from './helpers.js'
+import { usePdfPageCount } from '../../hooks/usePdfPageCount.js'
 
 export default function SplitPdf() {
   const [file, setFile] = useState(null)
   const [mode, setMode] = useState('explode')
   const [ranges, setRanges] = useState('')
   const { running, progress, error, result, run, reset } = useJob()
+  const { pageCount } = usePdfPageCount(file)
 
   const pick = (files) => {
     setFile(files[0])
@@ -29,7 +31,7 @@ export default function SplitPdf() {
           <div className="card flex items-center gap-3 p-3">
             <Icon name="fileText" className="h-5 w-5 text-brand-600" />
             <span className="min-w-0 flex-1 truncate text-sm font-medium">{file.name}</span>
-            <span className="text-xs text-slate-400">{formatBytes(file.size)}</span>
+           <span className="text-xs text-slate-400">{formatBytes(file.size)}{pageCount != null && ` · ${pageCount} page${pageCount === 1 ? '' : 's'}`}</span>
           </div>
 
           <div className="card space-y-4 p-4">
