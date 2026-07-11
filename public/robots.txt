@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://doxdock.vercel.app/sitemap.xml
