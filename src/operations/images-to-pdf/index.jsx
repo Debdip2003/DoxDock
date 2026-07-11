@@ -13,12 +13,24 @@ export default function ImagesToPdf() {
   const [pageSize, setPageSize] = useState('fit')
   const [orientation, setOrientation] = useState('auto')
   const [margin, setMargin] = useState(0)
-  const { running, progress, error, result, run, reset } = useJob()
+  const { running, progress, error, setError, result, run, reset } = useJob();
 
   const addFiles = (incoming) => {
-    setFiles((prev) => [...prev, ...incoming.filter((f) => f.type.startsWith('image/'))])
-    reset()
-  }
+    const duplicate = incoming.find((f) =>
+      files.some(
+        (existing) => existing.name === f.name && existing.size === f.size,
+      ),
+    );
+    if (duplicate) {
+      setError(`Duplicate file: ${duplicate.name}`);
+      return;
+    }
+    setFiles((prev) => [
+      ...prev,
+      ...incoming.filter((f) => f.type.startsWith("image/")),
+    ]);
+    reset();
+  };
   const move = (from, to) =>
     setFiles((prev) => {
       const next = [...prev]

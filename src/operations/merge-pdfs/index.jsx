@@ -10,12 +10,24 @@ import { mergePdfs } from './helpers.js'
 
 export default function MergePdfs() {
   const [files, setFiles] = useState([])
-  const { running, progress, error, result, run, reset } = useJob()
+  const { running, progress, error, setError, result, run, reset } = useJob();
 
   const add = (incoming) => {
-    setFiles((prev) => [...prev, ...incoming.filter((f) => /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name))])
-    reset()
-  }
+    const duplicate = incoming.find((f) =>
+      files.some(
+        (existing) => existing.name === f.name && existing.size === f.size,
+      ),
+    );
+    if (duplicate) {
+      setError(`Duplicate file: ${duplicate.name}`);
+      return;
+    }
+    setFiles((prev) => [
+      ...prev,
+      ...incoming.filter((f) => /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name)),
+    ]);
+    reset();
+  };
   const move = (from, to) =>
     setFiles((prev) => {
       const next = [...prev]
