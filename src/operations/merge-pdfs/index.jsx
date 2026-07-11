@@ -10,24 +10,47 @@ import { mergePdfs } from './helpers.js'
 
 export default function MergePdfs() {
   const [files, setFiles] = useState([])
+  const [warning, setWarning] = useState(null)
   const { running, progress, error, setError, result, run, reset } = useJob();
 
   const add = (incoming) => {
-    const duplicate = incoming.find((f) =>
-      files.some(
-        (existing) => existing.name === f.name && existing.size === f.size,
-      ),
-    );
-    if (duplicate) {
-      setError(`Duplicate file: ${duplicate.name}`);
-      return;
-    }
-    setFiles((prev) => [
-      ...prev,
-      ...incoming.filter((f) => /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name)),
-    ]);
+    const isPdf = (f) => /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name);
+    const isSameFile = (a, b) => a.name === b.name && a.size === b.size;
+
+    const skipped = [];
+    const accepted = [];
+
+    incoming.forEach((f) => {
+      if (!isPdf(f)) return; //ignore the non pdf files
+
+      const alreadyInList = files.some((existing) => isSameFile(existing, f));
+      const alreadyAcceptedThisBatch = accepted.some((added) => isSameFile(added, f));
+
+      if (alreadyInList || alreadyAcceptedThisBatch) {
+        skipped.push(f.name);
+      } else {
+        accepted.push(f);
+      }
+    });
+
     reset();
+
+    if (accepted.length > 0) {
+      setFiles((prev) => [...prev, ...accepted]);
+    }
+
+    if (skipped.length > 0) {
+      const unique = [...new Set(skipped)];
+      setWarning(
+        unique.length === 1
+          ? `Skipped duplicate file: ${unique[0]}`
+          : `Skipped duplicate files: ${unique.join(', ')}`
+      );
+    } else {
+      setWarning(null); // clear any old warning if this batch was clean
+    }
   };
+
   const move = (from, to) =>
     setFiles((prev) => {
       const next = [...prev]
@@ -57,6 +80,7 @@ export default function MergePdfs() {
 
       {running && progress && <Progress value={progress.value} message={progress.message} />}
       {error && <Note type="error" title="Merge failed">{error}</Note>}
+      {warning && <Note type="warning" title="Heads up">{warning}</Note>}
     </div>
   )
 }
