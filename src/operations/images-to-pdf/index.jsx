@@ -13,24 +13,46 @@ export default function ImagesToPdf() {
   const [pageSize, setPageSize] = useState('fit')
   const [orientation, setOrientation] = useState('auto')
   const [margin, setMargin] = useState(0)
+  const [warning, setWarning] = useState(null)
   const { running, progress, error, setError, result, run, reset } = useJob();
-
   const addFiles = (incoming) => {
-    const duplicate = incoming.find((f) =>
-      files.some(
-        (existing) => existing.name === f.name && existing.size === f.size,
-      ),
-    );
-    if (duplicate) {
-      setError(`Duplicate file: ${duplicate.name}`);
-      return;
+    const isImage = (f) => f.type.startsWith("image/");
+    const isSameFile = (a, b) => a.name === b.name && a.size === b.size;
+
+    const skipped = [];
+    const accepted = [];
+
+    incoming.forEach((f) => {
+      if (!isImage(f)) return; // ignore non-image files
+
+      const alreadyInList = files.some((existing) => isSameFile(existing, f));
+      const alreadyAcceptedThisBatch = accepted.some((added) => isSameFile(added, f));
+
+      if (alreadyInList || alreadyAcceptedThisBatch) {
+        skipped.push(f.name);
+      } else {
+        accepted.push(f);
+      }
+    });
+
+    reset(); // clear useJob's error/result/progress
+
+    if (accepted.length > 0) {
+      setFiles((prev) => [...prev, ...accepted]);
     }
-    setFiles((prev) => [
-      ...prev,
-      ...incoming.filter((f) => f.type.startsWith("image/")),
-    ]);
-    reset();
+
+    if (skipped.length > 0) {
+      const unique = [...new Set(skipped)];
+      setWarning(
+        unique.length === 1
+          ? `Skipped duplicate file: ${unique[0]}`
+          : `Skipped duplicate files: ${unique.join(', ')}`
+      );
+    } else {
+      setWarning(null);
+    }
   };
+
   const move = (from, to) =>
     setFiles((prev) => {
       const next = [...prev]
@@ -135,6 +157,7 @@ export default function ImagesToPdf() {
       {result && !running && (
         <Note type="info">Your PDF is ready — it was generated entirely on this device.</Note>
       )}
+      {warning && <Note type="warning" title="Heads up">{warning}</Note>}
     </div>
   )
 }
